@@ -9,6 +9,12 @@ export const Goal = builder.prismaObject("goals", {
     })
 })
 
+export const GoalInputPartial = builder.inputType('GoalInputPartial', {
+  fields: (t) => ({
+    id: t.id({ required: true }),
+  }),
+});
+
 builder.queryField("goals", 
   t => t.prismaField({
     type: ['goals'],
