@@ -2,7 +2,7 @@ import { PrismaClientValidationError } from "@prisma/client/runtime/library";
 import { builder } from "../builder";
 import { prisma } from "../db";
 
-builder.prismaObject("users", {
+export const User = builder.prismaObject("users", {
   fields: t => ({
       //id: t.exposeID("id"),
       firstName: t.exposeString("first_name"),
@@ -10,6 +10,13 @@ builder.prismaObject("users", {
       email: t.exposeString("email"),
   })
 })
+
+export const UserInputPartial = builder.inputType('UserInputPartial', {
+  fields: (t) => ({
+    id: t.id({ required: true }),
+  }),
+});
+
 
 builder.queryField("user", (t) =>
   t.prismaField({
