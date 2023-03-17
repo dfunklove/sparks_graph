@@ -7,7 +7,7 @@ import { prisma } from "./db";
 export const builder = new SchemaBuilder<{
   Scalars: {
     DateTime: { Input: Date; Output: Date };
-    ID: { Input: BigInt; Output: BigInt };
+    ID: { Input: bigint; Output: bigint };
   };
   PrismaTypes: PrismaTypes;
 }>({
@@ -19,4 +19,3 @@ export const builder = new SchemaBuilder<{
 
 builder.addScalarType("DateTime", DateTimeResolver, {});
 builder.addScalarType("ID", BigIntResolver, {});
-
