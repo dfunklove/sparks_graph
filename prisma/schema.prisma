@@ -1,0 +1,108 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator gen {
+  provider = "prisma-client-js"
+}
+
+generator pothos {
+  provider = "prisma-pothos-types"
+}
+
+model goals {
+  id         BigInt    @id @default(autoincrement())
+  name       String    @unique(map: "index_goals_on_name") @db.VarChar
+  ratings    ratings[]
+  students   student_goals[]
+}
+
+model group_lessons {
+  id         BigInt    @id @default(autoincrement())
+  notes      String?
+  user_id    BigInt
+  time_in    DateTime  @db.Timestamp(6)
+  time_out   DateTime? @db.Timestamp(6)
+  course_id  BigInt?
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rails_d877e32e5d")
+  lessons    lessons[]
+
+  @@unique([user_id, time_in], map: "index_group_lessons_on_user_id_and_time_in")
+  @@index([user_id], map: "index_group_lessons_on_user_id")
+}
+
+model lessons {
+  id                 BigInt         @id @default(autoincrement())
+  student_id         BigInt
+  time_in            DateTime       @db.Timestamp(6)
+  time_out           DateTime?      @db.Timestamp(6)
+  notes              String?
+  user_id            BigInt
+  school_id          BigInt
+  group_lesson_id    BigInt?
+  schools            schools        @relation(fields: [school_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rails_09010f5a34")
+  users              users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rails_6027eb145c")
+  students           students       @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rails_7ed30edb11")
+  group_lessons      group_lessons? @relation(fields: [group_lesson_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rails_ff5e4bcaa0")
+  ratings            ratings[]
+
+  @@index([group_lesson_id], map: "index_lessons_on_group_lesson_id")
+  @@index([school_id], map: "index_lessons_on_school_id")
+  @@index([student_id], map: "index_lessons_on_student_id")
+  @@index([user_id], map: "index_lessons_on_user_id")
+}
+
+model ratings {
+  id         BigInt   @id @default(autoincrement())
+  score      Int
+  goal_id    BigInt
+  lesson_id  BigInt
+  lessons    lessons @relation(fields: [lesson_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rails_6e6d997ed4")
+  goals      goals   @relation(fields: [goal_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rails_85b3c4a593")
+
+  @@index([goal_id], map: "index_ratings_on_goal_id")
+  @@index([lesson_id], map: "index_ratings_on_lesson_id")
+}
+
+model schools {
+  id         BigInt     @id @default(autoincrement())
+  name       String     @unique(map: "index_schools_on_name") @db.VarChar
+  lessons    lessons[]
+  students   students[]
+}
+
+model student_goals {
+  id         BigInt @id @default(autoincrement())
+  goal_id    BigInt
+  student_id BigInt
+  goals      goals    @relation(fields: [goal_id], references: [id])
+  students   students @relation(fields: [student_id], references: [id])
+
+  @@unique([goal_id, student_id], map: "index_student_goals_on_goal_id_and_student_id")
+  @@index([goal_id], map: "index_student_goals_on_goal_id")
+  @@index([student_id], map: "index_student_goals_on_student_id")
+}
+
+model students {
+  id          BigInt    @id @default(autoincrement())
+  first_name  String    @db.VarChar
+  last_name   String    @db.VarChar
+  school_id   BigInt
+  goals       student_goals[]
+  lessons     lessons[]
+  schools     schools   @relation(fields: [school_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rails_0adebddbd5")
+
+  @@index([school_id], map: "index_students_on_school_id")
+}
+
+model users {
+  id              BigInt          @id @default(autoincrement())
+  first_name      String          @db.VarChar
+  last_name       String          @db.VarChar
+  email           String          @unique(map: "index_users_on_email") @db.VarChar
+  type            String          @db.VarChar
+  password_digest String          @db.VarChar
+  group_lessons   group_lessons[]
+  lessons         lessons[]
+}
