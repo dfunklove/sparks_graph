@@ -34,10 +34,11 @@ builder.mutationType({
       resolve: (query, _, {input}) =>
         prisma.lessons.create({...query, data: {
           notes: input.notes,
-          schools: { connect: { id: (BigInt(input.schools.id as bigint) as bigint) } }, 
-          students: { connect: { id: (BigInt(input.students.id as bigint) as bigint) } },
-          time_in: input.time_in,
-          users: { connect: { id: (BigInt(input.users.id as bigint) as bigint) } },
+          schools: { connect: { id: (BigInt(input.school.id as bigint) as bigint) } }, 
+          students: { connect: { id: (BigInt(input.student.id as bigint) as bigint) } },
+          time_in: input.timeIn,
+          time_out: input.timeOut,
+          users: { connect: { id: (BigInt(input.user.id as bigint) as bigint) } },
         }})
     }),
   }),

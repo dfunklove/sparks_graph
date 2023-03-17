@@ -20,11 +20,11 @@ export const Lesson = builder.prismaObject("lessons", {
 export const LessonInput = builder.inputType('LessonInput', {
   fields: (t) => ({
     notes: t.string(),
-    schools: t.field({type: SchoolInputPartial, required: true}),
-    students: t.field({type: StudentInputPartial, required: true}),
-    time_in: t.field({type: "DateTime", required: true}),
-    time_out: t.field({type: "DateTime"}),
-    users: t.field({type: UserInputPartial, required: true}),
+    school: t.field({type: SchoolInputPartial, required: true}),
+    student: t.field({type: StudentInputPartial, required: true}),
+    timeIn: t.field({type: "DateTime", required: true}),
+    timeOut: t.field({type: "DateTime"}),
+    user: t.field({type: UserInputPartial, required: true}),
   }),
 });
 
