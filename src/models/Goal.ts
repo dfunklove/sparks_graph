@@ -1,7 +1,7 @@
 import { builder } from "../builder";
 import { prisma } from "../db";
 
-export default builder.prismaObject("goals", {
+export const Goal = builder.prismaObject("goals", {
     select: { id: true},
     fields: t => ({
 //        id: t.exposeID("id"),
