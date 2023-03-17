@@ -1,5 +1,5 @@
 import SchemaBuilder from "@pothos/core";
-import { BigIntResolver, DateTimeResolver, NonEmptyStringResolver } from "graphql-scalars";
+import { BigIntResolver, DateTimeResolver } from "graphql-scalars";
 import PrismaPlugin from "@pothos/plugin-prisma";
 import type PrismaTypes from "@pothos/plugin-prisma/generated";
 import { prisma } from "./db";
@@ -7,7 +7,7 @@ import { prisma } from "./db";
 export const builder = new SchemaBuilder<{
   Scalars: {
     DateTime: { Input: Date; Output: Date };
-    //ID: { Input: BigInt; Output: BigInt };
+    ID: { Input: BigInt; Output: BigInt };
   };
   PrismaTypes: PrismaTypes;
 }>({
@@ -17,11 +17,6 @@ export const builder = new SchemaBuilder<{
   },
 });
 
-//builder.addScalarType("ID", NonEmptyStringResolver, { serialize: ((x: any) => x.id.toString()) });
-//builder.addScalarType("ID", BigIntResolver, {});
-/*builder.scalarType("ID", {
-  serialize: (n) => n.toString(),
-  parseValue: (n: any) => n.toString() //BigInt(n as (string | number | bigint | boolean))
-});*/
 builder.addScalarType("DateTime", DateTimeResolver, {});
+builder.addScalarType("ID", BigIntResolver, {});
 
