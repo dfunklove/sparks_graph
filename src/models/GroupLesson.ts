@@ -1,9 +1,10 @@
 import { builder } from "../builder";
 import { prisma } from "../db";
+import { parseID } from "../util";
 
 builder.prismaObject("group_lessons", {
   fields: t => ({
-//      id: t.exposeID("id"),
+      id: t.exposeID("id"),
       lessonSet: t.relation("lessons"),
       notes: t.exposeString("notes", { nullable: true }),
       timeIn: t.expose("time_in", {type: "DateTime"}),
@@ -28,7 +29,7 @@ builder.queryField("groupLesson", (t) =>
       id: t.arg.id()
     },
     resolve: async (query, root, args, ctx, info) => {
-      return prisma.group_lessons.findUniqueOrThrow({ ...query, where: { id: BigInt(args.id as (string | number | bigint | boolean)) } });
+      return prisma.group_lessons.findUniqueOrThrow({ ...query, where: { id: parseID(args.id) } });
     },
   })
 );

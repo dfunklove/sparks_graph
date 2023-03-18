@@ -3,7 +3,7 @@ import { prisma } from "../db";
 
 export const School = builder.prismaObject("schools", {
   fields: t => ({
-      //id: t.exposeID("id"),
+      id: t.exposeID("id"),
       name: t.exposeString("name"),
   })
 })

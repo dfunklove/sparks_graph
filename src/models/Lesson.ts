@@ -1,6 +1,7 @@
 import { MaybePromise } from "@pothos/core";
 import { builder } from "../builder";
 import { prisma } from "../db";
+import { parseID } from "../util";
 import { RatingInputPartial } from "./Rating"
 import { SchoolInputPartial } from "./School"
 import { StudentInputPartial } from "./Student"
@@ -8,7 +9,7 @@ import { UserInputPartial } from "./User"
 
 export const Lesson = builder.prismaObject("lessons", {
   fields: t => ({
-//      id: t.id({resolve: x => x.id.toString()}),
+      id: t.exposeID("id"),
       notes: t.exposeString("notes", {nullable: true}),
       ratingSet: t.relation("ratings"),
       school: t.relation("schools"),
@@ -50,7 +51,7 @@ builder.queryField("lesson", (t) =>
       id: t.arg.id()
     },
     resolve: async (query, root, args, ctx, info) => {
-      return prisma.lessons.findUniqueOrThrow({ ...query, where: { id: BigInt(args.id as (string | number | bigint | boolean)) } });
+      return prisma.lessons.findUniqueOrThrow({ ...query, where: { id: parseID(args.id) } });
     },
   })
 );
@@ -82,11 +83,11 @@ builder.mutationField("createLesson",
     resolve: (query, _, {input}) =>
       prisma.lessons.create({...query, data: {
         notes: input.notes,
-        schools: { connect: { id: BigInt(input.school.id) } }, 
-        students: { connect: { id: BigInt(input.student.id) } },
+        schools: { connect: { id: parseID(input.school.id) } }, 
+        students: { connect: { id: parseID(input.student.id) } },
         time_in: input.timeIn,
         time_out: input.timeOut,
-        users: { connect: { id: BigInt(input.user.id) } },
+        users: { connect: { id: parseID(input.user.id) } },
       }})
   })
 );
@@ -98,7 +99,7 @@ builder.mutationField("updateLesson",
       input: t.arg({ type: LessonInputPartial, required: true }),
     },
     resolve: async (query, _, {input}) => {
-      const lesson_id = BigInt(input.id);
+      const lesson_id = parseID(input.id);
       const promises: Promise<any>[] = [];
       promises.push(prisma.lessons.update({...query, data: {
           notes: input.notes,
@@ -112,14 +113,14 @@ builder.mutationField("updateLesson",
           input.ratingSet.map((rating) => ({
             lesson_id: lesson_id,
             score: rating.score,
-            goal_id: BigInt(rating.goalId),
+            goal_id: parseID(rating.goalId),
           }))
         }));
         const lesson = await prisma.lessons.findUniqueOrThrow({where: { id: lesson_id }, select: { student_id: true }})
         const student_id = lesson.student_id
         await prisma.student_goals.deleteMany({where: { student_id: student_id }});
         promises.push(prisma.student_goals.createMany({
-          data: input.ratingSet.map((rating) => ({ goal_id: BigInt(rating.goalId), student_id: student_id }))
+          data: input.ratingSet.map((rating) => ({ goal_id: parseID(rating.goalId), student_id: student_id }))
         }));
       }
       return Promise.all(promises) as MaybePromise<any>;

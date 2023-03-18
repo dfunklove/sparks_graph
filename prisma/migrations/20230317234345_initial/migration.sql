@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "goals" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "name" VARCHAR NOT NULL,
 
     CONSTRAINT "goals_pkey" PRIMARY KEY ("id")
@@ -8,43 +8,43 @@ CREATE TABLE "goals" (
 
 -- CreateTable
 CREATE TABLE "group_lessons" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "notes" TEXT,
-    "user_id" BIGINT NOT NULL,
+    "user_id" INTEGER NOT NULL,
     "time_in" TIMESTAMP(6) NOT NULL,
     "time_out" TIMESTAMP(6),
-    "course_id" BIGINT,
+    "course_id" INTEGER,
 
     CONSTRAINT "group_lessons_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "lessons" (
-    "id" BIGSERIAL NOT NULL,
-    "student_id" BIGINT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "student_id" INTEGER NOT NULL,
     "time_in" TIMESTAMP(6) NOT NULL,
     "time_out" TIMESTAMP(6),
     "notes" TEXT,
-    "user_id" BIGINT NOT NULL,
-    "school_id" BIGINT NOT NULL,
-    "group_lesson_id" BIGINT,
+    "user_id" INTEGER NOT NULL,
+    "school_id" INTEGER NOT NULL,
+    "group_lesson_id" INTEGER,
 
     CONSTRAINT "lessons_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "ratings" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "score" INTEGER NOT NULL,
-    "goal_id" BIGINT NOT NULL,
-    "lesson_id" BIGINT NOT NULL,
+    "goal_id" INTEGER NOT NULL,
+    "lesson_id" INTEGER NOT NULL,
 
     CONSTRAINT "ratings_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "schools" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "name" VARCHAR NOT NULL,
 
     CONSTRAINT "schools_pkey" PRIMARY KEY ("id")
@@ -52,26 +52,26 @@ CREATE TABLE "schools" (
 
 -- CreateTable
 CREATE TABLE "student_goals" (
-    "id" BIGSERIAL NOT NULL,
-    "goal_id" BIGINT NOT NULL,
-    "student_id" BIGINT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "goal_id" INTEGER NOT NULL,
+    "student_id" INTEGER NOT NULL,
 
     CONSTRAINT "student_goals_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "students" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "first_name" VARCHAR NOT NULL,
     "last_name" VARCHAR NOT NULL,
-    "school_id" BIGINT NOT NULL,
+    "school_id" INTEGER NOT NULL,
 
     CONSTRAINT "students_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "users" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "first_name" VARCHAR NOT NULL,
     "last_name" VARCHAR NOT NULL,
     "email" VARCHAR NOT NULL,

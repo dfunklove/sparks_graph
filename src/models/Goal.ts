@@ -4,7 +4,7 @@ import { prisma } from "../db";
 export const Goal = builder.prismaObject("goals", {
     select: { id: true},
     fields: t => ({
-//        id: t.exposeID("id"),
+        id: t.exposeID("id"),
         name: t.exposeString("name"),
     })
 })

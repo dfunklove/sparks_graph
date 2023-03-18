@@ -4,7 +4,7 @@ import { Goal } from "./Goal"
 
 export const Student = builder.prismaObject("students", {
   fields: t => ({
-//      id: t.exposeID("id"),
+      id: t.exposeID("id"),
       firstName: t.exposeString("first_name"),
       lastName: t.exposeString("last_name"),
       school: t.relation("schools"),

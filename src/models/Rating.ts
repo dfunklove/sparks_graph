@@ -3,7 +3,7 @@ import { GoalInputPartial } from "./Goal";
 
 export const Rating = builder.prismaObject("ratings", {
   fields: t => ({
-//      id: t.exposeID("id"),
+      id: t.exposeID("id"),
       goal: t.relation("goals"),
       lesson: t.relation("lessons"),
       score: t.exposeInt("score"),
