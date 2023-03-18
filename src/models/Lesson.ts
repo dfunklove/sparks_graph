@@ -2,7 +2,7 @@ import { MaybePromise } from "@pothos/core";
 import { group_lessons, lessons } from "@prisma/client";
 import { builder } from "../builder";
 import { prisma } from "../db";
-import { parseID } from "../util";
+import { parseID, updateRatingsAndGoals } from "../util";
 import { GroupLesson, LessonInputPartial } from "./GroupLesson";
 import { RatingInputPartial } from "./Rating"
 import { SchoolInputPartial } from "./School"
@@ -118,30 +118,16 @@ builder.mutationField("updateLesson",
       input: t.arg({ type: LessonInputPartial, required: true }),
     },
     resolve: async (query, _, {input}) => {
-      const lesson_id = parseID(input.id);
       //const promises: Promise<any>[] = [];
       const promise = prisma.lessons.update({...query, data: {
           notes: input.notes,
           time_out: input.timeOut,
         },
-        where: { id: lesson_id }
+        where: { id: parseID(input.id) }
       });
       await promise;
       if (input.ratingSet) {
-        await prisma.ratings.deleteMany({ where: { lesson_id: lesson_id }});
-        await prisma.ratings.createMany({data:
-          input.ratingSet.map((rating) => ({
-            lesson_id: lesson_id,
-            score: rating.score,
-            goal_id: parseID(rating.goalId),
-          }))
-        });
-        const lesson = await prisma.lessons.findUniqueOrThrow({where: { id: lesson_id }, select: { student_id: true }})
-        const student_id = lesson.student_id
-        await prisma.student_goals.deleteMany({where: { student_id: student_id }});
-        await prisma.student_goals.createMany({
-          data: input.ratingSet.map((rating) => ({ goal_id: parseID(rating.goalId), student_id: student_id }))
-        });
+        await updateRatingsAndGoals(input.id, input.ratingSet);
       }
       return promise;
     }

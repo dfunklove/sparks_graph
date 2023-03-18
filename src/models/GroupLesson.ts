@@ -2,7 +2,7 @@ import { MaybePromise } from "@pothos/core";
 import { parse } from "path";
 import { builder } from "../builder";
 import { prisma } from "../db";
-import { parseID } from "../util";
+import { parseID, updateRatingsAndGoals } from "../util";
 import { RatingInputPartial } from "./Rating";
 import { SchoolInputPartial } from "./School";
 import { StudentInputPartial } from "./Student";
@@ -116,22 +116,31 @@ builder.mutationField("updateGroupLesson",
       input: t.arg({ type: GroupLessonInputPartial, required: true }),
     },
     resolve: async (query, _, {input}) => {
-      return prisma.group_lessons.update({...query, data: {
-        notes: input.notes,
-        time_out: input.timeOut,
-        lessons: {
-          update: input.lessonSet?.map(lesson => ({
-            data: {
-              time_out: input.timeOut
-            },
-            where: {
-              id: parseID(lesson.id)
-            },
-          }))
-        }
-      },
-      where: { id: parseID(input.id) }
-    })
+      const promise = prisma.group_lessons.update({...query, 
+        data: {
+          notes: input.notes,
+          time_out: input.timeOut,
+          lessons: {
+            update: input.lessonSet?.map(lesson => ({
+              data: {
+                notes: input.notes,
+                time_out: input.timeOut,
+              },
+              where: {
+                id: parseID(lesson.id)
+              },
+            }))
+          }
+        },
+        where: { id: parseID(input.id) }
+      })
+      await promise;
+      input.lessonSet?.map(async lesson => {
+        if (lesson.ratingSet) {
+          await updateRatingsAndGoals(lesson.id, lesson.ratingSet);
+        }    
+      })
+      return promise;
     }
   })
 );
