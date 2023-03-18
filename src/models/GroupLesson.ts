@@ -1,4 +1,5 @@
 import { MaybePromise } from "@pothos/core";
+import { parse } from "path";
 import { builder } from "../builder";
 import { prisma } from "../db";
 import { parseID } from "../util";
@@ -36,7 +37,7 @@ export const GroupLesson = builder.prismaObject("group_lessons", {
 
 export const GroupLessonInput = builder.inputType('GroupLessonInput', {
   fields: (t) => ({
-    lesson_set: t.field({type: [LessonInputPartial], required: true}),
+    lessonSet: t.field({type: [LessonInputPartial], required: true}),
     notes: t.string(),
     school: t.field({type: SchoolInputPartial, required: true}),
     timeIn: t.field({type: "DateTime", required: true}),
@@ -48,7 +49,7 @@ export const GroupLessonInput = builder.inputType('GroupLessonInput', {
 export const GroupLessonInputPartial = builder.inputType('GroupLessonInputPartial', {
   fields: (t) => ({
     id: t.id({ required: true }),
-    lesson_set: t.field({type: [LessonInputPartial]}),
+    lessonSet: t.field({type: [LessonInputPartial]}),
     notes: t.string(),
     school: t.field({type: SchoolInputPartial}),
     timeIn: t.field({type: "DateTime"}),
@@ -64,7 +65,7 @@ builder.queryField("groupLessons", (t) =>
       userId: t.arg.id()
     },
     resolve: async (query, root, args, ctx, info) => {
-      return prisma.group_lessons.findMany({ ...query, where: { user_id: parseID(args.userId) } });
+      return prisma.group_lessons.findMany({ ...query, where: { user_id: parseID(args.userId) }, include: { lessons: true } });
     },
   })
 );
@@ -76,7 +77,7 @@ builder.queryField("groupLesson", (t) =>
       pk: t.arg.id()
     },
     resolve: async (query, root, args, ctx, info) => {
-      return prisma.group_lessons.findUniqueOrThrow({ ...query, where: { id: parseID(args.pk) } });
+      return prisma.group_lessons.findUniqueOrThrow({ ...query, where: { id: parseID(args.pk) }, include: { lessons: true } });
     },
   })
 );
@@ -90,13 +91,22 @@ builder.mutationField("createGroupLesson",
       studentIds: t.arg.idList(),
       userId: t.arg.id(),
     },
-    resolve: (query, _, {schoolId, studentIds, userId}) =>
-      prisma.group_lessons.create({...query, data: {
-        time_in: (new Date()).toISOString(),
+    resolve: (query, _, {schoolId, studentIds, userId}) => {
+      const time_in = (new Date()).toISOString();
+      return prisma.group_lessons.create({...query, data: {
+        time_in: time_in,
         school_id: parseID(schoolId),
         user_id: parseID(userId),
+        lessons: { 
+          create: studentIds?.map(studentId => ({ 
+            time_in: time_in,
+            students: { connect: { id: parseID(studentId) } },
+            schools: { connect: { id: parseID(schoolId) } }, 
+            users: { connect: { id: parseID(userId) } } 
+          }))
+        },
       }})
-  })
+  }})
 );
 
 builder.mutationField("updateGroupLesson",
@@ -109,7 +119,16 @@ builder.mutationField("updateGroupLesson",
       return prisma.group_lessons.update({...query, data: {
         notes: input.notes,
         time_out: input.timeOut,
-        users: { connect: { id: parseID(input.user?.id) } },
+        lessons: {
+          update: input.lessonSet?.map(lesson => ({
+            data: {
+              time_out: input.timeOut
+            },
+            where: {
+              id: parseID(lesson.id)
+            },
+          }))
+        }
       },
       where: { id: parseID(input.id) }
     })
