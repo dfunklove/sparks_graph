@@ -21,10 +21,12 @@ model goals {
 model group_lessons {
   id         Int    @id @default(autoincrement())
   notes      String?
+  school_id  Int
   user_id    Int
   time_in    DateTime  @db.Timestamp(6)
   time_out   DateTime? @db.Timestamp(6)
   course_id  Int?
+  schools    schools   @relation(fields: [school_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_rails_d877e32e5d")
   lessons    lessons[]
 
@@ -68,6 +70,7 @@ model ratings {
 model schools {
   id         Int     @id @default(autoincrement())
   name       String     @unique(map: "index_schools_on_name") @db.VarChar
+  group_lessons group_lessons[]
   lessons    lessons[]
   students   students[]
 }
