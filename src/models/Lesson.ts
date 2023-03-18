@@ -61,8 +61,11 @@ builder.queryField("lessons", (t) =>
 
 const lesson_any = builder.unionType("lesson_any", {
   types: [Lesson, GroupLesson],
-  resolveType: (lesson) => {
-    return Lesson;
+  resolveType: (lesson: any) => {
+    if (lesson.lessons)
+      return GroupLesson;
+    else
+      return Lesson;
   }});
 
 builder.queryField("openLesson", (t) =>
@@ -74,10 +77,16 @@ builder.queryField("openLesson", (t) =>
     resolve: async (parent, args, ctx, info) => {
       const lesson = await prisma.lessons.findFirstOrThrow({
         where: { time_out: null, user_id: parseID(args.userId) }, 
-        include: { group_lessons: true }, 
+        include: { 
+          group_lessons: { 
+            include: { 
+              lessons: true 
+            }
+          }
+        }, 
       });
       if (lesson.group_lessons)
-        return lesson.group_lessons
+        return lesson.group_lessons;
       else
         return lesson;
     },
