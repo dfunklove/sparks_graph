@@ -1,15 +1,19 @@
 import { MaybePromise } from "@pothos/core";
+import { group_lessons, lessons } from "@prisma/client";
 import { builder } from "../builder";
 import { prisma } from "../db";
 import { parseID } from "../util";
+import { GroupLesson, LessonInputPartial } from "./GroupLesson";
 import { RatingInputPartial } from "./Rating"
 import { SchoolInputPartial } from "./School"
 import { StudentInputPartial } from "./Student"
 import { UserInputPartial } from "./User"
 
 export const Lesson = builder.prismaObject("lessons", {
+  name: "Lesson",
   fields: t => ({
       id: t.exposeID("id"),
+      group_lesson: t.relation("group_lessons"),
       notes: t.exposeString("notes", {nullable: true}),
       ratingSet: t.relation("ratings"),
       school: t.relation("schools"),
@@ -31,27 +35,14 @@ export const LessonInput = builder.inputType('LessonInput', {
   }),
 });
 
-export const LessonInputPartial = builder.inputType('LessonInputPartial', {
-  fields: (t) => ({
-    id: t.id({ required: true }),
-    notes: t.string(),
-    ratingSet: t.field({type: [RatingInputPartial] }),
-    school: t.field({type: SchoolInputPartial }),
-    student: t.field({type: StudentInputPartial }),
-    timeIn: t.field({type: "DateTime" }),
-    timeOut: t.field({type: "DateTime"}),
-    user: t.field({type: UserInputPartial }),
-  }),
-});
-
 builder.queryField("lesson", (t) =>
   t.prismaField({
     type: "lessons",
     args: {
-      id: t.arg.id()
+      pk: t.arg.id()
     },
     resolve: async (query, root, args, ctx, info) => {
-      return prisma.lessons.findUniqueOrThrow({ ...query, where: { id: parseID(args.id) } });
+      return prisma.lessons.findUniqueOrThrow({ ...query, where: { id: parseID(args.pk) } });
     },
   })
 );
@@ -59,17 +50,36 @@ builder.queryField("lesson", (t) =>
 builder.queryField("lessons", (t) =>
   t.prismaField({
     type: ["lessons"],
+    args: {
+      userId: t.arg.id()
+    },
     resolve: async (query, root, args, ctx, info) => {
-      return prisma.lessons.findMany({ ...query });
+      return prisma.lessons.findMany({ ...query, where: { user_id: parseID(args.userId) } });
     },
   })
 );
 
+const lesson_any = builder.unionType("lesson_any", {
+  types: [Lesson, GroupLesson],
+  resolveType: (lesson) => {
+    return Lesson;
+  }});
+
 builder.queryField("openLesson", (t) =>
-  t.prismaField({
-    type: "lessons",
-    resolve: async (query, root, args, ctx, info) => {
-      return prisma.lessons.findFirstOrThrow({ ...query, where: { time_out: null } });
+  t.field({
+    type: lesson_any,
+    args: {
+      userId: t.arg.id()
+    },
+    resolve: async (parent, args, ctx, info) => {
+      const lesson = await prisma.lessons.findFirstOrThrow({
+        where: { time_out: null, user_id: parseID(args.userId) }, 
+        include: { group_lessons: true }, 
+      });
+      if (lesson.group_lessons)
+        return lesson.group_lessons
+      else
+        return lesson;
     },
   })
 );
@@ -100,30 +110,31 @@ builder.mutationField("updateLesson",
     },
     resolve: async (query, _, {input}) => {
       const lesson_id = parseID(input.id);
-      const promises: Promise<any>[] = [];
-      promises.push(prisma.lessons.update({...query, data: {
+      //const promises: Promise<any>[] = [];
+      const promise = prisma.lessons.update({...query, data: {
           notes: input.notes,
           time_out: input.timeOut,
         },
         where: { id: lesson_id }
-      }));
+      });
+      await promise;
       if (input.ratingSet) {
-        promises.push(prisma.ratings.deleteMany({ where: { lesson_id: lesson_id }}));
-        promises.push(prisma.ratings.createMany({data:
+        await prisma.ratings.deleteMany({ where: { lesson_id: lesson_id }});
+        await prisma.ratings.createMany({data:
           input.ratingSet.map((rating) => ({
             lesson_id: lesson_id,
             score: rating.score,
             goal_id: parseID(rating.goalId),
           }))
-        }));
+        });
         const lesson = await prisma.lessons.findUniqueOrThrow({where: { id: lesson_id }, select: { student_id: true }})
         const student_id = lesson.student_id
         await prisma.student_goals.deleteMany({where: { student_id: student_id }});
-        promises.push(prisma.student_goals.createMany({
+        await prisma.student_goals.createMany({
           data: input.ratingSet.map((rating) => ({ goal_id: parseID(rating.goalId), student_id: student_id }))
-        }));
+        });
       }
-      return Promise.all(promises) as MaybePromise<any>;
+      return promise;
     }
   })
 );
